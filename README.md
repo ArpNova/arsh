@@ -38,3 +38,7 @@ The shell follows a standard lifecycle:
 - Support for built-in commands (cd, help, exit).
 - Input/Output redirection.
 - Pipes.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
