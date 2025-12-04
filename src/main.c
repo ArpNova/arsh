@@ -62,19 +62,6 @@ int lsh_exit(char **args){
 }
 
 
-int lsh_execute(char **args){
-    if(args[0] == NULL){
-        //An empty command was entered
-        return 1;
-    }
-
-    for(int i = 0; i < lsh_num_biultins(); i++){
-        if(strcmp(args[0], builtin_str[i]) == 0){
-            return (*builtin_func[i])(args);
-        }
-        return lsh_launch(args);
-    }
-}
 
 int lsh_launch(char **args){
     pid_t pid, wpid;
@@ -97,6 +84,20 @@ int lsh_launch(char **args){
     }
     
     return 1;
+}
+
+int lsh_execute(char **args){
+    if(args[0] == NULL){
+        //An empty command was entered
+        return 1;
+    }
+
+    for(int i = 0; i < lsh_num_biultins(); i++){
+        if(strcmp(args[0], builtin_str[i]) == 0){
+            return (*builtin_func[i])(args);
+        }
+        return lsh_launch(args);
+    }
 }
 
 #define LSH_TOK_BUFSIZE 64
