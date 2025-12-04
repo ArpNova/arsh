@@ -15,7 +15,7 @@ int lsh_exit(char **args);
 /*
     list of builtin commands
 */
-char *buildin_str[] = {
+char *builtin_str[] = {
     "cd",
     "help",
     "exit"
@@ -28,7 +28,7 @@ int (*builtin_func[]) (char **) = {
 };
 
 int lsh_num_biultins(){
-    return sizeof(buildin_str) / sizeof(char*);
+    return sizeof(builtin_str) / sizeof(char*);
 }
 
 /*
@@ -50,7 +50,7 @@ int lsh_help(char **args){
     printf("The following are built in:\n");
 
     for(int i = 0; i < lsh_num_biultins(); i++){
-        printf(" %s\n", buildin_str[i]);
+        printf(" %s\n", builtin_str[i]);
     }
 
     printf("Use the man command for information on other programs.\n");
@@ -61,6 +61,20 @@ int lsh_exit(char **args){
     return 0;
 }
 
+
+int lsh_execute(char **args){
+    if(args[0] == NULL){
+        //An empty command was entered
+        return 1;
+    }
+
+    for(int i = 0; i < lsh_num_biultins(); i++){
+        if(strcmp(args[0], builtin_str[i]) == 0){
+            return (*builtin_func[i])(args);
+        }
+        return lsh_launch(args);
+    }
+}
 
 int lsh_launch(char **args){
     pid_t pid, wpid;
