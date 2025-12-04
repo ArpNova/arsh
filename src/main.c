@@ -134,7 +134,7 @@ char **lsh_split_line(char *line){
 
 
 #define LSH_RL_BUFSIZE 1024
-void *lsh_read_line(void){
+char *lsh_read_line(void){
     int bufsize = LSH_RL_BUFSIZE;
     int position = 0;
     char *buffer = malloc(sizeof(char)*bufsize);
@@ -147,7 +147,7 @@ void *lsh_read_line(void){
 
     while(1){
         c = getchar();
-        if(c == EOF || c == '\0'){
+        if(c == EOF || c == '\n'){
             buffer[position] = '\0';
             return buffer;
         } 
