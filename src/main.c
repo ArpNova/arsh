@@ -21,6 +21,16 @@ char *buildin_str[] = {
     "exit"
 };
 
+int (*builtin_func[]) (char **) = {
+    &lsh_cd,
+    &lsh_help,
+    &lsh_exit
+};
+
+int lsh_num_biultins(){
+    return sizeof(buildin_str) / sizeof(char*);
+}
+
 int lsh_launch(char **args){
     pid_t pid, wpid;
     int status;
