@@ -8,10 +8,17 @@
 #include <string.h>
 #include <signal.h>
 
+volatile sig_atomic_t is_running_command = 0;
+
 //signal handler
 void sigint_handler(int signo){
-    printf("\n> ");
-    fflush(stdout);
+    if(!is_running_command){
+        printf("\n> ");
+        fflush(stdout);
+    }
+    else{
+        printf("\n");
+    }
     
 }
 
@@ -78,6 +85,9 @@ int lsh_launch(char **args){
     pid_t pid, wpid;
     int status;
 
+    // trun the flag on before forking
+    is_running_command = 1;
+
     pid  = fork();
     if(pid == 0){
         //child process
@@ -93,6 +103,9 @@ int lsh_launch(char **args){
         } while (!WIFEXITED(status) && !WIFSIGNALED(status));
         
     }
+    
+    // turn the flag off after the child is done
+    is_running_command = 0;
     
     return 1;
 }
