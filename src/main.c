@@ -159,7 +159,7 @@ char *lsh_read_line(void){
     while(1){
         c = getchar();
 
-        //end of file handler
+        //end of file check
         if(c == EOF)exit(EXIT_SUCCESS);
         
         if(c == '\n'){
