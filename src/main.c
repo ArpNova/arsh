@@ -115,6 +115,31 @@ int lsh_launch(char **args)
         // scan for redirection
         for (int i = 0; args[i] != NULL; i++)
         {
+            //append redirection
+            if(strcmp(args[i], ">>") == 0){
+                if(args[i+1] == NULL){
+                    fprintf(stderr, "lsh: expected argument to \">>\"\n");
+                    exit(EXIT_FAILURE);
+                }
+
+                char *filename = args[i+1];
+                int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
+
+                if(fd == -1){
+                    perror("lsh: open append");
+                    exit(EXIT_FAILURE);
+                }
+
+                if(dup2(fd, STDOUT_FILENO) == -1){
+                    perror("lsh: dup2 append");
+                    exit(EXIT_FAILURE);
+                }
+                close(fd);
+
+                args[i] = NULL;
+                continue;
+            }
+
             // output redirection
             if (strcmp(args[i], ">") == 0)
             {
