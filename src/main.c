@@ -10,6 +10,9 @@
 #include <fcntl.h>
 
 volatile sig_atomic_t is_running_command = 0;
+int last_exit_status = 0;
+
+int lsh_execute(char **args);
 
 // signal handler
 void sigint_handler(int signo)
@@ -222,6 +225,9 @@ int lsh_launch(char **args)
                 wpid = waitpid(pid, &status, WUNTRACED);
             }while (!WIFEXITED(status) && !WIFSIGNALED(status));
             
+            if(WIFEXITED(status)){
+                last_exit_status = WEXITSTATUS(status);
+            }
             is_running_command = 0;
         }
         else{
@@ -231,6 +237,48 @@ int lsh_launch(char **args)
     }
 
     return 1;
+}
+
+//handle && and || logic
+int lsh_logic_split(char **args){
+    int split_idx = -1;
+    int type = 0; // 1 for &&, 2 for ||
+
+    for(int i = 0; args[i] != NULL; i++){
+        if(strcmp(args[i], "&&") == 0){
+            split_idx = i;
+            type = 1;
+            break;
+        }
+
+        else if(strcmp(args[i], "||") == 0){
+            split_idx = i;
+            type = 2;
+            break;
+        }
+    }
+
+    if(split_idx == -1){
+        return lsh_launch(args);
+    }
+
+    args[split_idx] = NULL;
+    char **cmd2 = &args[split_idx + 1];
+
+    int loop_status = lsh_execute(args);
+
+    if(type == 1){
+        if(last_exit_status == 0){
+            return lsh_execute(cmd2);
+        }
+    }
+    else if(type == 2){
+        if(last_exit_status != 0){
+            return lsh_execute(cmd2);
+        }
+    }
+
+    return loop_status;
 }
 
 //pipe
@@ -327,7 +375,7 @@ int lsh_execute(char **args)
             return (*builtin_func[i])(args);
         }
     }
-    return lsh_launch(args);
+    return lsh_logic_split(args);
 }
 
 #define LSH_TOK_BUFSIZE 64
