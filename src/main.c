@@ -189,6 +189,73 @@ int lsh_launch(char **args)
     return 1;
 }
 
+//pipe
+int lsh_launch_pipe(char **args, int pipe_pos){
+    int pipefd[2];
+    pid_t p1, p2;
+
+    args[pipe_pos] = NULL;
+    char **cmd2 = &args[pipe_pos + 1];
+
+    if(pipe(pipefd) < 0){
+        perror("lsh: pipe");
+        return 1;
+    }
+
+    is_running_command = 1;
+
+    //left child
+    p1 = fork();
+    if(p1 < 0){
+        perror("fork");
+        return 1;
+    }
+
+    if(p1 == 0){
+        //child1
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(pipefd[1]);
+
+        if(execvp(args[0], args) == -1){
+            perror("lsh: exec p1");
+        }
+        exit(EXIT_FAILURE);
+    }
+
+    //right child
+    p2 = fork();
+    if(p2 < 0){
+        perror("fork");
+        return 1;
+    }
+
+    if(p2 == 0){
+        //child2
+        close(pipefd[1]);
+        dup2(pipefd[0], STDIN_FILENO);
+        close(pipefd[0]);
+
+        if(execvp(cmd2[0], cmd2) == -1){
+            perror("lsh: exec p2");
+        }
+        exit(EXIT_FAILURE);
+    }
+
+    //parent
+    close(pipefd[0]);
+    close(pipefd[1]);
+
+    waitpid(p1, NULL, 0);
+    waitpid(p2, NULL, 0);
+
+    is_running_command = 0;
+    return 1;
+    
+}
+
+
+
 int lsh_execute(char **args)
 {
     if (args[0] == NULL)
@@ -197,6 +264,18 @@ int lsh_execute(char **args)
         return 1;
     }
 
+    //scan for pipe
+    for(int i = 0; args[i] != NULL; i++){
+        if(strcmp(args[i], "|") == 0){
+            if(args[i+1] == NULL){
+                fprintf(stderr, "lsh: ppipe missing second command\n");
+                return 1;
+            }
+            return lsh_launch_pipe(args, i);
+        }
+    }
+
+    //check builtins
     for (int i = 0; i < lsh_num_biultins(); i++)
     {
         if (strcmp(args[0], builtin_str[i]) == 0)
