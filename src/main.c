@@ -484,12 +484,18 @@ char **lsh_expand_env_vars(char **args){
         
         //'$' check
         if(arg[0] == '$' && strlen(arg) > 1){
-            char *env_val = getenv(arg+1);
-
-            if(env_val != NULL){
-                tokens[position++] = strdup(env_val);
+            if(strcmp(arg, "$?") == 0){
+                char buffer[16];
+                snprintf(buffer, 16, "%d", last_exit_status);
+                tokens[position++] = strdup(buffer);
             }else{
-                tokens[position++] = strdup("");
+                char *env_val = getenv(arg+1);
+
+                if(env_val != NULL){
+                    tokens[position++] = strdup(env_val);
+                }else{
+                    tokens[position++] = strdup("");
+                }
             }
         }else{
             tokens[position++] = strdup(arg);
