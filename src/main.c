@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <glob.h>
+#include <limits.h>
 
 #ifndef GLOB_TILDE
 /* Some platforms (non-GNU) don't provide GLOB_TILDE; define as no-op flag */
@@ -26,13 +27,16 @@ int lsh_launch(char **args);
 int lsh_cd(char **args);
 int lsh_help(char **args);
 int lsh_exit(char **args);
+void lsh_print_prompt();
 
 // signal handler
 void sigint_handler(int signo)
 {
     if (!is_running_command)
     {
-        printf("\n> ");
+        printf("\n");
+        lsh_print_prompt();
+        // printf("\n$ ");
         fflush(stdout);
     }
     else
@@ -657,6 +661,27 @@ char *lsh_read_line(void)
     }
 }
 
+void lsh_print_prompt(){
+    char hostname[1024];
+    gethostname(hostname, 1024);
+
+    char *username = getenv("USER");
+
+    char cwd[PATH_MAX];
+    if(getcwd(cwd, sizeof(cwd)) != NULL){
+        printf("\033[1;32m%s@%s\033[0m:\033[1;34m%s\033[0m$ ",
+            username ? username : "user",
+            hostname,
+            cwd
+        );
+    }
+    else{
+        printf("> ");
+    }
+
+    fflush(stdout);
+}
+
 void lsh_loop(void)
 {
     char *line;
@@ -672,7 +697,8 @@ void lsh_loop(void)
             printf("[Process %d exited]\n", zombie_pid);
         } 
 
-        printf("> ");
+        lsh_print_prompt();
+
         line = lsh_read_line();
         if(line == NULL){
             printf("\n");
