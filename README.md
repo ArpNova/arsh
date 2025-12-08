@@ -4,13 +4,37 @@ This is a custom implementation of a Unix shell, written from scratch in C. The 
 
 ## Features
 
-- **REPL (Read-Eval-Print Loop)**: The shell runs in a continuous loop, waiting for user input.
-- **Input Parsing**: Reads commands from stdin and tokenizes them into arguments.
-- **Command Execution**: (In Progress) Executes commands by forking processes and using `execvp`.
+-   **REPL (Read-Eval-Print Loop)**: The shell runs in a continuous loop, waiting for user input.
+-   **Input Parsing**: Reads commands from stdin and tokenizes them into arguments.
+-   **Command Execution**: Executes commands by forking processes and using `execvp`.
+-   **Built-in Commands**:
+    -   `cd`: Change directory.
+    -   `help`: Display help information.
+    -   `exit`: Exit the shell.
+    -   `export`: Set environment variables (KEY=VALUE).
+    -   `unset`: Unset environment variables.
+-   **Input/Output Redirection**:
+    -   `>`: Redirect output to a file (overwrite).
+    -   `>>`: Redirect output to a file (append).
+    -   `<`: Redirect input from a file.
+-   **Pipes**: Support for `|` to pipe output of one command to another.
+-   **Logical Operators**:
+    -   `&&`: Execute the second command only if the first succeeds.
+    -   `||`: Execute the second command only if the first fails.
+-   **Wildcard Expansion**: Support for `*` and `?` using globbing.
+-   **Environment Variables**: Support for `$VAR` expansion.
+-   **Background Processes**: Support for running commands in the background using `&`.
+-   **Signal Handling**: Graceful handling of `SIGINT` (Ctrl+C).
 
 ## Project Structure
 
-- `src/main.c`: Contains the main logic for the shell, including the main loop, input reading, and parsing functions.
+-   `src/main.c`: Contains the complete source code for the shell, including:
+    -   Main loop (REPL).
+    -   Input reading and parsing.
+    -   Command execution logic.
+    -   Built-in command implementations.
+    -   Signal handling.
+    -   Wildcard and environment variable expansion.
 
 ## How to Build and Run
 
@@ -29,15 +53,21 @@ To run the shell:
 ## Implementation Details
 
 The shell follows a standard lifecycle:
-1. **Read**: Reads a line of input from the user.
-2. **Parse**: Splits the line into program names and arguments.
-3. **Execute**: Runs the parsed command.
+
+1.  **Read**: Reads a line of input from the user.
+2.  **Parse**: Splits the line into tokens.
+3.  **Expand**: Expands environment variables and wildcards.
+4.  **Execute**:
+    -   Checks for built-in commands.
+    -   Handles pipes and logical operators.
+    -   Forks and executes external commands.
+    -   Manages input/output redirection.
 
 ## Future Improvements
 
-- Support for built-in commands (cd, help, exit).
-- Input/Output redirection.
-- Pipes.
+-   Command history with arrow key support.
+-   Tab completion for filenames and commands.
+-   More robust error handling.
 
 ## License
 
