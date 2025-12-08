@@ -621,7 +621,7 @@ char **lsh_split_line(char *line)
 }
 
 #define LSH_RL_BUFSIZE 1024
-char *lsh_read_line(void)
+char *lsh_read_line(FILE *stream)
 {
     int bufsize = LSH_RL_BUFSIZE;
     int position = 0;
@@ -636,7 +636,7 @@ char *lsh_read_line(void)
 
     while (1)
     {
-        c = getchar();
+        c = fgetc(stream);
 
         // end of file check
         if (c == EOF){
@@ -688,7 +688,7 @@ void lsh_print_prompt(){
     fflush(stdout);
 }
 
-void lsh_loop(void)
+void lsh_loop(FILE *stream)
 {
     char *line;
     char **args;
@@ -703,9 +703,11 @@ void lsh_loop(void)
             printf("[Process %d exited]\n", zombie_pid);
         } 
 
-        lsh_print_prompt();
+        if(stream == stdin){
+            lsh_print_prompt();
+        }
 
-        line = lsh_read_line();
+        line = lsh_read_line(stream);
         if(line == NULL){
             printf("\n");
             exit(EXIT_SUCCESS);
@@ -732,7 +734,6 @@ void lsh_loop(void)
 
 int main(int argc, char **argv)
 {
-
     struct sigaction sa;
     sa.sa_handler = sigint_handler;
     sigemptyset(&sa.sa_mask);
@@ -743,7 +744,22 @@ int main(int argc, char **argv)
         perror("lsh: signal");
     }
 
-    lsh_loop();
+    if(argc == 1){
+        lsh_loop(stdin);
+    }
+    else if (argc == 2)
+    {
+        FILE *f = fopen(argv[1], "r");
+        if(!f){
+            perror("lsh");
+            return EXIT_FAILURE;
+        }
+        lsh_loop(f);
+        fclose(f);
+    }else{
+        fprintf(stderr, "Usage: %s [script_file]\n", argv[0]);
+    }
+    
 
     return EXIT_SUCCESS;
 }
