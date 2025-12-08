@@ -23,6 +23,9 @@ int lsh_execute(char **args);
 int lsh_logic_split(char **args);
 int lsh_launch_pipeline(char **args);
 int lsh_launch(char **args);
+int lsh_cd(char **args);
+int lsh_help(char **args);
+int lsh_exit(char **args);
 
 // signal handler
 void sigint_handler(int signo)
@@ -38,12 +41,8 @@ void sigint_handler(int signo)
     }
 }
 
-/*
-    function declarations for builtin shell commands
-*/
-int lsh_cd(char **args);
-int lsh_help(char **args);
-int lsh_exit(char **args);
+
+
 
 /*
     list of builtin commands
