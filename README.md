@@ -30,6 +30,8 @@ This is a custom implementation of a Unix shell, written from scratch in C. The 
 -   **Signal Handling**: Graceful handling of `SIGINT` (Ctrl+C).
 -   **Zombie Process Reaping**: Automatically cleans up terminated background processes.
 -   **Script Execution**: Can execute commands from a file provided as an argument.
+-   **Command History**: Navigate through previous commands using Up/Down arrow keys.
+-   **Line Editing**: Support for Left/Right arrow keys, Home, End, and Backspace for editing the current command line.
 
 ## Project Structure
 
@@ -76,7 +78,6 @@ The shell follows a standard lifecycle:
 
 ## Future Improvements
 
--   Command history with arrow key support.
 -   Tab completion for filenames and commands.
 -   More robust error handling.
 
