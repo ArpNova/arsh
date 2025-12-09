@@ -10,6 +10,8 @@
 #include <fcntl.h>
 #include <glob.h>
 #include <limits.h>
+#include <termios.h>
+#include <ctype.h>
 
 #ifndef GLOB_TILDE
 /* Some platforms (non-GNU) don't provide GLOB_TILDE; define as no-op flag */
@@ -18,6 +20,11 @@
 
 volatile sig_atomic_t is_running_command = 0;
 int last_exit_status = 0;
+
+struct termios orig_termios;
+#define HISTORY_MAX 50
+char *history[HISTORY_MAX];
+int history_count = 0;
 
 //forward declarations
 int lsh_execute(char **args);
@@ -28,6 +35,11 @@ int lsh_cd(char **args);
 int lsh_help(char **args);
 int lsh_exit(char **args);
 void lsh_print_prompt();
+void disableRawMode();
+void enableRawMode();
+void add_to_history();
+
+
 
 // signal handler
 void sigint_handler(int signo)
@@ -620,51 +632,222 @@ char **lsh_split_line(char *line)
     return tokens;
 }
 
+void disableRawMode(){
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+}
+
+void enableRawMode(){
+    tcgetattr(STDIN_FILENO, &orig_termios);
+    atexit(disableRawMode);
+    struct termios raw = orig_termios;
+    raw.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+}
+
+void add_to_history(char *line){
+    if(line[0] == '\0')return;
+
+    if(history_count > 0 && strcmp(history[history_count-1], line) == 0)return;
+
+    if(history_count < HISTORY_MAX){
+        history[history_count++] = strdup(line);
+    }else{
+        free(history[0]);
+        for(int i = 1; i < HISTORY_MAX; i++){
+            history[i-1] = history[i]; 
+        }
+        history[HISTORY_MAX - 1] = strdup(line);
+    }
+}
+
 #define LSH_RL_BUFSIZE 1024
 char *lsh_read_line(FILE *stream)
 {
+    if(stream != stdin){
+        char *line = NULL;
+        size_t bufsize = 0;
+        if(getline(&line, &bufsize, stream) == -1)return NULL;
+        line[strcspn(line, "\n")] = 0;
+        return line;
+    }
+
+    enableRawMode();
+
     int bufsize = LSH_RL_BUFSIZE;
     int position = 0;
     char *buffer = malloc(sizeof(char) * bufsize);
-    int c;
+    buffer[0] = '\0';
+    int history_index = history_count;
 
-    if (!buffer)
-    {
-        fprintf(stderr, "lsh: allocation error\n");
-        exit(EXIT_FAILURE);
-    }
+    while(1){
+        char c;
+        if(read(STDIN_FILENO, &c, 1) == -1)break;
 
-    while (1)
-    {
-        c = fgetc(stream);
+        //esc sequence
+        if(c == '\x1b'){
+            char seq[3];
+            if(read(STDIN_FILENO, &seq[0], 1) == 0)continue;
+            if(read(STDIN_FILENO, &seq[1], 1) == 0)continue;
 
-        // end of file check
-        if (c == EOF){
-            free(buffer);
-            return NULL;
+            if(seq[0] == '['){
+                //arrow keys
+                if(seq[1] == 'A'){
+                    //UP
+                    if(history_index > 0){
+                        history_index--;
+
+                        while (position > 0){
+                            printf("\b \b");
+                            fflush(stdout);
+                            position--;
+                        }
+
+                        strcpy(buffer, history[history_index]);
+                        position = strlen(buffer);
+                        printf("%s", buffer);
+                        fflush(stdout);
+                    }
+                }
+                else if(seq[1] == 'B'){
+                    //DOWN
+                    if(history_index < history_count){
+                        history_index++;
+
+                        while (position > 0)
+                        {
+                            printf("\b \b");
+                            fflush(stdout);
+                            position--;
+                        }
+
+                        if(history_index < history_count){
+                            strcpy(buffer, history[history_index]);
+                            position = strlen(buffer);
+                            printf("%s", buffer);
+                            fflush(stdout);
+                        }else{
+                            buffer[0] = '\0';
+                            position = 0;
+                        }
+                    }
+                }
+                else if(seq[1] == 'C'){
+                    //RIGHT
+                    if(position < strlen(buffer)){
+                        printf("\033[C");
+                        fflush(stdout);
+                        position++;
+                    }
+                }
+                else if(seq[1] == 'D'){
+                    //LEFT
+                    if(position > 0){
+                        printf("\033[D");
+                        fflush(stdout);
+                        position--;
+                    }
+                }
+                // HOME KEY (Standard: \x1b[H or \x1b[1~)
+                else if(seq[1] == 'H' || seq[1] == '1'){
+                    while(position > 0){
+                        printf("\b");
+                        fflush(stdout);
+                        position--;
+                    }
+                }
+                // END KEY (Standard: \x1b[F or \x1b[4~)
+                else if(seq[1] == 'F' || seq[1] == '4'){
+                    int len = strlen(buffer);
+                    while(position < len){
+                        printf("\033[C");
+                        fflush(stdout);
+                        position++;
+                    }
+                }
+            }
+            // Some terminals use 'O' for Home/End (e.g. \x1bOH)
+            else if(seq[0] == 'O'){
+                if(seq[1] == 'H'){
+                    while(position > 0){
+                        printf("\b");
+                        fflush(stdout);
+                        position--;
+                    }
+                }
+                else if(seq[1] == 'F'){
+                    int len = strlen(buffer);
+                    while(position < len){
+                        printf("\033[C");
+                        fflush(stdout);
+                        position++;
+                    }
+                }
+            }
+            continue;
         }
 
-        if (c == '\n')
-        {
-            buffer[position] = '\0';
+        //normal keys
+        if(c == '\n'){
+            buffer[strlen(buffer)] = '\0';
+            printf("\n");
+            fflush(stdout);
+            disableRawMode();
+            add_to_history(buffer);
             return buffer;
         }
-        else
-        {
-            buffer[position] = c;
-        }
-        position++;
-        if (position >= bufsize)
-        {
-            bufsize += LSH_RL_BUFSIZE;
-            buffer = realloc(buffer, bufsize);
-            if (!buffer)
-            {
-                fprintf(stderr, "lsh: allocation error\n");
-                exit(EXIT_FAILURE);
+        else if(c == 127){
+            if(position > 0){
+                int len = strlen(buffer);
+                if(position == len){
+                    position--;
+                    buffer[position] = '\0';
+                    printf("\b \b");
+                    fflush(stdout);
+                }else{
+                    memmove(&buffer[position-1], &buffer[position], len - position +1);
+                    position--;
+
+                    //redraw
+                    printf("\b");
+                    fflush(stdout);
+                    printf("%s", &buffer[position]);
+                    printf(" ");
+                    fflush(stdout);
+
+                    for(int k = position; k<len; k++){
+                        printf("\b");
+                        fflush(stdout);
+                    }
+                }
             }
         }
+        else if(c == '\t'){
+            //tabs(future feature)
+        }
+        else{
+            //regular char
+            int len = strlen(buffer);
+            if(position == len){
+                buffer[position] = c;
+                buffer[position+1] = '\0';
+                position++;
+                printf("%c", c); 
+                fflush(stdout);
+            }else{
+                memmove(&buffer[position+1], &buffer[position], len - position +1);
+                buffer[position] = c;
+                printf("%s", &buffer[position]);
+                fflush(stdout);
+                position++;
+                for(int k=position; k<=len; k++){
+                    printf("\b");
+                    fflush(stdout);
+                }
+            }    
+        }
     }
+    disableRawMode();
+    return NULL;
 }
 
 void lsh_print_prompt(){
@@ -731,6 +914,8 @@ void lsh_loop(FILE *stream)
     } while (status);
     
 }
+
+
 
 int main(int argc, char **argv)
 {
