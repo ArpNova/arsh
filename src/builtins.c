@@ -21,15 +21,32 @@ int arsh_cd(char **args) {
 
 int arsh_help(char **args) {
   (void)args;
-  printf("Welcome to arsh\n");
-  printf("Type program names and arguments, and hit enter.\n");
-  printf("The following are built in:\n");
+  printf("==================================================\n");
+  printf("                  ARSH SHELL HELP                 \n");
+  printf("==================================================\n");
+  printf("Type program names and arguments, and hit enter.\n\n");
 
-  for (int i = 0; i < arsh_num_biultins(); i++) {
-    printf(" %s\n", builtin_str[i]);
-  }
+  printf("Built-in Commands:\n");
+  printf("  cd [dir]       : Change the current directory\n");
+  printf("  help           : Display this help message\n");
+  printf("  exit           : Exit the shell\n");
+  printf("  export KEY=VAL : Set an environment variable\n");
+  printf("  unset KEY      : Unset an environment variable\n\n");
 
-  printf("Use the man command for information on other programs.\n");
+  printf("Shell Features:\n");
+  printf("  > file         : Redirect output to a file (overwrite)\n");
+  printf("  >> file        : Redirect output to a file (append)\n");
+  printf("  < file         : Redirect input from a file\n");
+  printf("  cmd1 | cmd2    : Pipe output of cmd1 to cmd2\n");
+  printf("  cmd1 && cmd2   : Run cmd2 only if cmd1 succeeds\n");
+  printf("  cmd1 || cmd2   : Run cmd2 only if cmd1 fails\n");
+  printf("  cmd &          : Run command in background\n");
+  printf("  * ?            : Wildcard expansion (globbing)\n");
+  printf("  $VAR           : Environment variable expansion\n");
+  printf("  $?             : Exit status of the last command\n\n");
+
+  printf("Use 'man' for information on other programs.\n");
+  printf("==================================================\n");
   return 1;
 }
 
