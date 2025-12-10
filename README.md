@@ -56,28 +56,25 @@ The codebase is organized for modularity and maintainability:
 └── README.md       # Project documentation
 ```
 
-## Getting Started
+## Installation
 
-### Prerequisites
+For detailed installation instructions for Linux, macOS, and Windows (via WSL), please refer to [INSTALLATION.md](INSTALLATION.md).
 
--   GCC (GNU Compiler Collection)
--   Make
+### Quick Build
 
-### Build
-
-To compile the project, simply run `make` in the root directory. This will compile the source files and generate the `arsh` executable.
+To compile the project, run:
 
 ```bash
 make
 ```
 
-To clean up build artifacts (object files and the executable):
+To remove build artifacts:
 
 ```bash
 make clean
 ```
 
-### Run
+## Usage
 
 Start the shell interactively:
 
@@ -85,8 +82,26 @@ Start the shell interactively:
 ./arsh
 ```
 
-Execute a script file:
+### Examples
 
+**Running commands:**
+```bash
+arsh> ls -la
+arsh> echo "Hello World"
+```
+
+**Piping and Redirection:**
+```bash
+arsh> ls | grep ".c" > source_files.txt
+```
+
+**Background Jobs:**
+```bash
+arsh> sleep 10 &
+```
+
+**Running Scripts:**
+You can also execute commands from a file:
 ```bash
 ./arsh script.txt
 ```
