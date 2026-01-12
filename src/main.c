@@ -2,6 +2,7 @@
 #include "../include/input.h"
 #include "../include/parser.h"
 #include "../include/shell.h"
+#include <stdio.h>
 
 // Global variables definition
 volatile sig_atomic_t is_running_command = 0;
@@ -61,6 +62,27 @@ void arsh_loop(FILE *stream) {
   } while (status);
 }
 
+void print_banner() {
+  char *cyan = "\033[1;36m";
+  char *reset = "\033[0m";
+
+  const char *art = "\n"
+                    "           Welcome to\n\n"
+                    "                              /$$\n"
+                    "                             | $$\n"
+                    " /$$$$$$   /$$$$$$   /$$$$$$$| $$$$$$$\n"
+                    "|____  $$ /$$__  $$ /$$_____/| $$__  $$\n"
+                    " /$$$$$$$| $$  \\__/|  $$$$$$ | $$  \\ $$\n"
+                    "/$$__  $$| $$       \\____  $$| $$  | $$\n"
+                    "| $$$$$$$| $$       /$$$$$$$/| $$  | $$\n"
+                    " \\______/|__/      |_______/ |__/  |__/\n"
+
+                    "\n";
+  
+  printf("%s%s%s",cyan,art,reset);
+  printf("    - A custom shell built from scratch in C -\n\n");
+}
+
 int main(int argc, char **argv) {
   struct sigaction sa;
   sa.sa_handler = sigint_handler;
@@ -70,6 +92,8 @@ int main(int argc, char **argv) {
   if (sigaction(SIGINT, &sa, NULL) == -1) {
     perror("arsh: signal");
   }
+
+  print_banner();
 
   if (argc == 1) {
     arsh_loop(stdin);
